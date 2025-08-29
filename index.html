@@ -6,10 +6,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script>
     (function () {
-      var iosScheme = 'az.cityfinance.cfapp://open';
-      var iosStore  = 'https://apps.apple.com/app/id[YOUR_APP_STORE_ID]';
-      var androidScheme = 'az.cityfinance.cfapp://open';
-      var androidStore  = 'https://play.google.com/store/apps/details?id=az.cityfinance.cfapp';
+      var scheme = 'az.cityfinance.cfapp://open';
+      var iosStore = 'https://apps.apple.com/tr/app/city-finance-mobile/id6741097001';
+      var androidStore = 'https://play.google.com/store/apps/details?id=com.cityfinance.cfapp';
 
       function platform() {
         var ua = navigator.userAgent || '';
@@ -19,51 +18,36 @@
       }
 
       var redirected = false;
-      function openStore() {
+      function goStore() {
         if (redirected) return;
         redirected = true;
         var p = platform();
         window.location.href = p === 'android' ? androidStore : iosStore;
       }
 
-      function tryOpen(schemeUrl) {
-        // If the page becomes hidden, assume success (app opened) and cancel fallback
-        var visibilityHandler = function () {
-          if (document.hidden) {
-            redirected = true;
-            clearTimeout(timer);
-            document.removeEventListener('visibilitychange', visibilityHandler);
-          }
-        };
-        document.addEventListener('visibilitychange', visibilityHandler);
+      function openApp() {
+        var p = platform();
+        var timer = setTimeout(goStore, 1200);
 
-        // iOS 17+/Safari best-effort: direct navigation
-        // Android Chrome also supports this
-        var timer = setTimeout(openStore, 1200);
-        window.location.href = schemeUrl;
-
-        // Safety: cancel timer if we come back visible and already navigated elsewhere
-        window.addEventListener('pagehide', function () {
+        function onHide() { // app opened → page hidden
           redirected = true;
           clearTimeout(timer);
-          document.removeEventListener('visibilitychange', visibilityHandler);
-        });
+          document.removeEventListener('visibilitychange', onHide);
+        }
+        document.addEventListener('visibilitychange', onHide);
+        window.addEventListener('pagehide', onHide);
+
+        // Attempt to open app
+        window.location.href = scheme;
+
+        // Desktop fallback: go to iOS store by default after 1.2s
+        if (p === 'other') setTimeout(goStore, 1300);
       }
 
-      // Kick off immediately on load
-      window.addEventListener('load', function () {
-        var p = platform();
-        if (p === 'android') {
-          tryOpen(androidScheme);
-        } else {
-          tryOpen(iosScheme);
-        }
-      });
+      window.addEventListener('load', openApp);
     })();
   </script>
-  <style>
-    html, body { height: 100%; margin: 0; background:#fff; }
-  </style>
+  <style>html,body{height:100%;margin:0;background:#fff;}</style>
 </head>
 <body></body>
 </html>
