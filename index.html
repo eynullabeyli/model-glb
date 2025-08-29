@@ -1,44 +1,69 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>City Finance App Launcher</title>
-    <style>
-        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
-        .button { 
-            display: inline-block; 
-            padding: 15px 30px; 
-            background: #007AFF; 
-            color: white; 
-            text-decoration: none; 
-            border-radius: 8px; 
-            margin: 10px; 
-            font-size: 18px;
-        }
-        .button:hover { background: #0056CC; }
-    </style>
-</head>
-<body>
-    <h1>City Finance App</h1>
-    
-    <a href="az.cityfinance.cfapp://open" class="button">Open App</a>
-    <br>
-    <a href="az.cityfinance.cfapp://home" class="button">Open Home</a>
-    <br>
-    <a href="az.cityfinance.cfapp://profile" class="button">Open Profile</a>
-    
-    <script>
-        // Optional: Add fallback detection
-        let clicked = false;
-        document.addEventListener('click', function(e) {
-            if (e.target.tagName === 'A' && e.target.href.includes('az.cityfinance.cfapp')) {
-                clicked = true;
-                setTimeout(function() {
-                    if (clicked) {
-                        alert('App not installed or failed to open. Please install the app first.');
-                    }
-                }, 2000);
-            }
+  <meta charset="utf-8">
+  <title>Open City Finance</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script>
+    (function () {
+      var iosScheme = 'az.cityfinance.cfapp://open';
+      var iosStore  = 'https://apps.apple.com/app/id[YOUR_APP_STORE_ID]';
+      var androidScheme = 'az.cityfinance.cfapp://open';
+      var androidStore  = 'https://play.google.com/store/apps/details?id=az.cityfinance.cfapp';
+
+      function platform() {
+        var ua = navigator.userAgent || '';
+        if (/iPad|iPhone|iPod/.test(ua)) return 'ios';
+        if (/Android/i.test(ua)) return 'android';
+        return 'other';
+      }
+
+      var redirected = false;
+      function openStore() {
+        if (redirected) return;
+        redirected = true;
+        var p = platform();
+        window.location.href = p === 'android' ? androidStore : iosStore;
+      }
+
+      function tryOpen(schemeUrl) {
+        // If the page becomes hidden, assume success (app opened) and cancel fallback
+        var visibilityHandler = function () {
+          if (document.hidden) {
+            redirected = true;
+            clearTimeout(timer);
+            document.removeEventListener('visibilitychange', visibilityHandler);
+          }
+        };
+        document.addEventListener('visibilitychange', visibilityHandler);
+
+        // iOS 17+/Safari best-effort: direct navigation
+        // Android Chrome also supports this
+        var timer = setTimeout(openStore, 1200);
+        window.location.href = schemeUrl;
+
+        // Safety: cancel timer if we come back visible and already navigated elsewhere
+        window.addEventListener('pagehide', function () {
+          redirected = true;
+          clearTimeout(timer);
+          document.removeEventListener('visibilitychange', visibilityHandler);
         });
-    </script>
-</body>
+      }
+
+      // Kick off immediately on load
+      window.addEventListener('load', function () {
+        var p = platform();
+        if (p === 'android') {
+          tryOpen(androidScheme);
+        } else {
+          tryOpen(iosScheme);
+        }
+      });
+    })();
+  </script>
+  <style>
+    html, body { height: 100%; margin: 0; background:#fff; }
+  </style>
+</head>
+<body></body>
 </html>
